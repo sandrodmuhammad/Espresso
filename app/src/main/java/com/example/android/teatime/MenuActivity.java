@@ -55,7 +55,7 @@ public class MenuActivity extends AppCompatActivity {
         GridView gridview = (GridView) findViewById(R.id.tea_grid_view);
         TeaMenuAdapter adapter = new TeaMenuAdapter(this, R.layout.grid_item_layout, teas);
         gridview.setAdapter(adapter);
-
+//bakekok
 
         // Set a click listener on that View
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {

@@ -13,106 +13,64 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 package com.example.android.teatime;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
-import android.widget.TextView;
+import android.support.test.espresso.intent.rule.IntentsTestRule;
+import android.support.test.runner.AndroidJUnit4;
 
-import java.text.NumberFormat;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class OrderSummaryActivity extends AppCompatActivity {
+import static android.app.Instrumentation.ActivityResult;
+import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.intent.Intents.intended;
+import static android.support.test.espresso.intent.Intents.intending;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.isInternal;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.core.IsNot.not;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_order_summary);
-        Toolbar menuToolbar = (Toolbar) findViewById(R.id.order_summary_toolbar);
-        setSupportActionBar(menuToolbar);
-        getSupportActionBar().setTitle(getString(R.string.order_summary_title));
+@RunWith(AndroidJUnit4.class)
+public class OrderSummaryActivityTest {
 
-        Intent intent = getIntent();
-        String teaName = intent.getStringExtra(OrderActivity.EXTRA_TEA_NAME);
-        int price = intent.getIntExtra(OrderActivity.EXTRA_TOTAL_PRICE, 0);
-        String size = intent.getStringExtra(OrderActivity.EXTRA_SIZE);
-        String milkType = intent.getStringExtra(OrderActivity.EXTRA_MILK_TYPE);
-        String sugarType = intent.getStringExtra(OrderActivity.EXTRA_SUGAR_TYPE);
-        int quantity = intent.getIntExtra(OrderActivity.EXTRA_QUANTITY, 0);
-
-        displayOrderSummary(teaName, price, size, milkType, sugarType, quantity);
-    }
+    private static final String emailMessage = "I just ordered a delicious tea from TeaTime. Next time you are craving a tea, check them out!";
 
     /**
-     * Create summary of the order.
-     *
-     * @param teaName   type of tea
-     * @param quantity  quantity ordered
-     * @param price     price of the order
-     * @param milkType  type of milk to add
-     * @param sugarType amount of sugar to add
-     */
-    private void displayOrderSummary(String teaName, int price, String size, String milkType,
-                                     String sugarType, int quantity) {
-
-        // Set tea name in order summary
-        TextView teaNameTextView = (TextView) findViewById(
-                R.id.summary_tea_name);
-        teaNameTextView.setText(teaName);
-
-        // Set quantity in order summary
-        TextView quantityTextView = (TextView) findViewById(
-                R.id.summary_quantity);
-        quantityTextView.setText(String.valueOf(quantity));
-
-        // Set tea size in order summary
-        TextView sizeTextView = (TextView) findViewById(
-                R.id.summary_tea_size);
-        sizeTextView.setText(size);
-
-        // Set milk type in order summary
-        TextView milkTextView = (TextView) findViewById(
-                R.id.summary_milk_type);
-        milkTextView.setText(milkType);
-
-        // Set sugar amount in order summary
-        TextView sugarTextView = (TextView) findViewById(
-                R.id.summary_sugar_amount);
-        sugarTextView.setText(sugarType);
-
-        // Set total price in order summary
-        TextView priceTextView = (TextView) findViewById(
-                R.id.summary_total_price);
-
-        String convertPrice = NumberFormat.getCurrencyInstance().format(price);
-        priceTextView.setText(convertPrice);
-
-    }
-
-    /**
-     * This method is called when the Send Email button is clicked and sends a copy of the order
-     * summary to the inputted email address.
+     * This test demonstrates Espresso Intents using the IntentsTestRule, a class that extends
+     * ActivityTestRule. IntentsTestRule initializes Espresso-Intents before each test that is annotated
+     * with @Test and releases it once the test is complete. The designated Activity
+     * is also terminated after each test.
      */
 
-    public void sendEmail(View view) {
+    @Rule
+    public IntentsTestRule<OrderSummaryActivity> mActivityRule = new IntentsTestRule<>(
+            OrderSummaryActivity.class);
 
-        String emailMessage = getString(R.string.email_message);
 
-        // Use an intent to launch an email app.
-        // Send the order summary in the email body.
-        Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:")); // only email apps should handle this
-        intent.putExtra(Intent.EXTRA_SUBJECT,
-                getString(R.string.order_summary_email_subject));
-        intent.putExtra(Intent.EXTRA_TEXT, emailMessage);
-
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivity(intent);
-
-        }
+    @Before
+    public void stubAllExternalIntents() {
+        // By default Espresso Intents does not stub any Intents. Stubbing needs to be setup before
+        // every test run. In this case all external Intents will be blocked.
+        intending(not(isInternal())).respondWith(new ActivityResult(Activity.RESULT_OK, null));
     }
 
+    @Test
+    public void clickSendEmailButton_SendsEmail() {
+
+        onView(withId(R.id.send_email_button)).perform(click());
+        // intended(Matcher<Intent> matcher) asserts the given matcher matches one and only one
+        // intent sent by the application.
+        intended(allOf(
+                hasAction(Intent.ACTION_SENDTO),
+                hasExtra(Intent.EXTRA_TEXT, emailMessage)));
+
+    }
 }
